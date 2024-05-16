@@ -249,9 +249,18 @@ export class BasePostRepository extends BasePostgresRepository<BasePostEntity, B
     const isPublished = query.isPublished ?? true;
     where.isPublished = Boolean(isPublished);
 
-    // Поиск публикаций определенного пользователя
-    if(query?.authorId) {
-      where.authorId = query.authorId;
+    // Поиск публикаций определенного автора (авторов)
+    const authors = [];
+    if(query?.authorId || query?.authorsIds) {
+      if(query?.authorId) {
+        authors.push(query?.authorId);
+      }
+
+      if(query?.authorsIds) {
+        authors.push(...query.authorsIds);
+      }
+
+      where.authorId = { in: authors }
     }
 
     // Поиск по определенному типу

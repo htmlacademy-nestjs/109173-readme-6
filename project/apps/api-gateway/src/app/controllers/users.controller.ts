@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { ConfigType } from '@nestjs/config';
-import { Body, Controller, HttpStatus, Inject, Patch, Post, Req, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpStatus, Inject, Param, Patch, Post, Req, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ServicesURLs } from '../types/services-urls';
 
@@ -13,6 +13,7 @@ import { apiGatewayConfig } from '@project/api-gateway-config';
 import { ChangePasswordDTO, CreateUserDTO, LoginUserDTO, UserRDO } from '@project/user/blog-user';
 import { AuthenticationMessage } from '@project/user/authentication'
 import { TokenPayloadInterface } from '@project/shared/core';
+import { BlogUserMessage } from 'libs/user/blog-user/src/lib/blog-user.constant';
 
 @ApiTags('Api-gateway: Users')
 @Controller('users')
@@ -114,24 +115,103 @@ export class UsersController {
   @Post('detail')
   @UseGuards(CheckAuthGuard)
   @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: BlogUserMessage.DESCRIPTION.USER_DETAIL })
   @ApiResponse({
     type: UserRDO,
     status: HttpStatus.OK,
-    description: AuthenticationMessage.SUCCESS.NEW_TOKENS
+    description: BlogUserMessage.SUCCESS.FOUND
   })
   @ApiResponse({
-    type: UserRDO,
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: AuthenticationMessage.SUCCESS.CANT_CREATE_TOKENS
+    status: HttpStatus.NOT_FOUND,
+    description: BlogUserMessage.ERROR.NOT_FOUND
   })
-  public async gerUserDetail(@Body() dto: string) {
+  public async gerUserDetail(@Body('userId') userId: string) {
     const userServiceUrl = `${this.servicesURLs.users}/`;
     const postServiceUrl = `${this.servicesURLs.posts}/count`;
 
-    const { data: userData } = await this.httpService.axiosRef.post(userServiceUrl, dto);
+    const { data: userData } = await this.httpService.axiosRef.post(userServiceUrl, { userId });
 
-    const { data: userPostsCount } = await this.httpService.axiosRef.post(postServiceUrl, dto);
+    const { data: userPostsCount } = await this.httpService.axiosRef.post(postServiceUrl, { userId });
 
     return { ...userData, userPostsCount: userPostsCount };
+  }
+
+  // Subscriptions
+  @Get('subscribers')
+  @UseGuards(CheckAuthGuard)
+  @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: BlogUserMessage.DESCRIPTION.USER_SUBSCRIBERS })
+  @ApiResponse({
+    type: UserRDO,
+    status: HttpStatus.OK,
+    description: BlogUserMessage.SUCCESS.FOUND
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: BlogUserMessage.ERROR.INCORRECT_CREDENTIALS
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: BlogUserMessage.ERROR.NOT_FOUND
+  })
+  public async getSubscribers( @Body('userId') userId: string ) {
+    const userServiceUrl = `${this.servicesURLs.users}/${userId}/subscribers`;
+    const { data } = await this.httpService.axiosRef.get(userServiceUrl);
+
+    return data;
+  }
+
+  @Post('/subscribe/:targetUserId')
+  @UseGuards(CheckAuthGuard)
+  @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: BlogUserMessage.DESCRIPTION.SUBSCRIBE })
+  @ApiResponse({
+    type: UserRDO,
+    status: HttpStatus.CREATED,
+    description: BlogUserMessage.SUCCESS.UPDATED
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: BlogUserMessage.ERROR.INCORRECT_CREDENTIALS
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: BlogUserMessage.ERROR.NOT_FOUND
+  })
+  public async subscribe(
+    @Param('targetUserId') targetUserId: string,
+    @Body('userId') userId: string,
+  ) {
+    const userServiceUrl = `${this.servicesURLs.users}/${userId}/subscribe/${targetUserId}`;
+    const { data } = await this.httpService.axiosRef.post(userServiceUrl);
+
+    return data;
+  }
+
+  @Post('/unsubscribe/:targetUserId')
+  @UseGuards(CheckAuthGuard)
+  @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: BlogUserMessage.DESCRIPTION.SUBSCRIBE })
+  @ApiResponse({
+    type: UserRDO,
+    status: HttpStatus.CREATED,
+    description: BlogUserMessage.SUCCESS.UPDATED
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: BlogUserMessage.ERROR.INCORRECT_CREDENTIALS
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: BlogUserMessage.ERROR.NOT_FOUND
+  })
+  public async unsubscribe(
+    @Param('targetUserId') targetUserId: string,
+    @Body('userId') userId: string,
+  ) {
+    const userServiceUrl = `${this.servicesURLs.users}/${userId}/unsubscribe/${targetUserId}`;
+    const { data } = await this.httpService.axiosRef.post(userServiceUrl);
+
+    return data;
   }
 }

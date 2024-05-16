@@ -3,8 +3,8 @@
 @port = 8000
 @baseUrl = http://{{host}}:{{port}}/api
 # Environment
-@userId = 6643e89dc0e4066e5ba3d7c2
-@targetUserId=6643e8a1c0e4066e5ba3d7c5
+@userId = 6646177524ba8da70246962d
+@targetUserId=66445cd36b3b4b923441d7ef
 # @targetUserId=6643e89dc0e4066e5ba3d7c2
 # @targetUserId=6643e8a1c0e4066e5ba3d7c5
 # @targetUserId=6643e8a5c0e4066e5ba3d7c8

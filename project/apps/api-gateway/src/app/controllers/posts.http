@@ -37,15 +37,14 @@ Content-Type: application/json
 # Create text-post
 POST {{baseUrl}}/ HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ0NWNkMzZiM2I0YjkyMzQ0MWQ3ZWYiLCJlbWFpbCI6Imlyb24tbWFuQHN0YXJraW5kdXN0cmllcy5pdCIsImZpcnN0bmFtZSI6IlRvbnkiLCJsYXN0bmFtZSI6IlN0YXJrIiwiaWF0IjoxNzE1Nzc3NDg3LCJleHAiOjE3MTU3Nzc3ODd9.fCySAbpZeXbT4a_qkps7Q3LMWPMOarcOIeCSZXTSUfk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ2MTc3NTI0YmE4ZGE3MDI0Njk2MmQiLCJlbWFpbCI6IlRFU1QtVVNFUkBzdGFya2luZHVzdHJpZXMuaXQiLCJmaXJzdG5hbWUiOiJURVNUIiwibGFzdG5hbWUiOiJURVNUIiwiaWF0IjoxNzE1ODY5Nzg2LCJleHAiOjE3MTU4NzAwODZ9.VJ4me4DZVNRwNcm8OJmjNxLABapbuSjwCsB4kPlRj8s
 
 {
   "type": "text",
   "tags": ["test", "test", "news", "other"],
   "isPublished": true,
   "isRepost": false,
-  "authorId": "66445cd36b3b4b923441d7ef",
-  "likes": ["sssss"],
+  "likes": [],
   "extraFields": {
     "announce": "Interesting text announce",
     "title": "Article title",
@@ -62,10 +61,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ0N
 ###
 
 ################################# UPDATING #################################
-@updatingPostId = 3defd7fe-8566-41b5-9263-07f4548a3ead
+@updatingPostId = 2a618459-86e5-4521-8a59-8a84edf58707
 PATCH  {{baseUrl}}/{{updatingPostId}} HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ0YTAyMWUxOTIzYjBhMWJkMzkxNGUiLCJlbWFpbCI6Imlyb24tbWFuMkBzdGFya2luZHVzdHJpZXMuaXQiLCJmaXJzdG5hbWUiOiJUb255IiwibGFzdG5hbWUiOiJTdGFyayIsImlhdCI6MTcxNTc3MzQ3NywiZXhwIjoxNzE1NzczNzc3fQ.jkYuXzoCuti4lAI_rKBxj7c9ujn9KFuXFTq3cR9XFx8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ2MTc3NTI0YmE4ZGE3MDI0Njk2MmQiLCJlbWFpbCI6IlRFU1QtVVNFUkBzdGFya2luZHVzdHJpZXMuaXQiLCJmaXJzdG5hbWUiOiJURVNUIiwibGFzdG5hbWUiOiJURVNUIiwiaWF0IjoxNzE1ODcwMDc3LCJleHAiOjE3MTU4NzAzNzd9.udlG4im-6dyZUaRM0tV0JuQMljXkZtV0r9Ypw5Fpn2Y
 
 {
   "isPublished": true
@@ -107,3 +106,10 @@ Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ0NWNkMzZiM2I0YjkyMzQ0MWQ3ZWYiLCJlbWFpbCI6Imlyb24tbWFuQHN0YXJraW5kdXN0cmllcy5pdCIsImZpcnN0bmFtZSI6IlRvbnkiLCJsYXN0bmFtZSI6IlN0YXJrIiwiaWF0IjoxNzE1NzgxMzk1LCJleHAiOjE3MTU3ODE2OTV9.IEEt8ejOD9zYF7Anc60C3tLPB3rMIKvo1sbiXtOWcDg
 ###
 
+
+
+################################# USER POSTS FEED #################################
+GET {{baseUrl}}/feed HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjQ2MTc3NTI0YmE4ZGE3MDI0Njk2MmQiLCJlbWFpbCI6IlRFU1QtVVNFUkBzdGFya2luZHVzdHJpZXMuaXQiLCJmaXJzdG5hbWUiOiJURVNUIiwibGFzdG5hbWUiOiJURVNUIiwiaWF0IjoxNzE1ODcwMDc3LCJleHAiOjE3MTU4NzAzNzd9.udlG4im-6dyZUaRM0tV0JuQMljXkZtV0r9Ypw5Fpn2Y
+###

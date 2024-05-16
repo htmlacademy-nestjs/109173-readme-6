@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, Req, UseFilters, UseGuards, UseInterceptors } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -24,10 +24,12 @@ import { UpdateBasePostDTO } from 'libs/post/blog-post/src/lib/dto/update-base-p
 import { CommentMessage } from '@project/post/comment';
 import { CreateCommentRDO } from 'libs/post/comment/src/lib/rdo/create-comment.rdo';
 import { CreateCommentDTO } from 'libs/post/comment/src/lib/dto/create-comment.dto';
-import { get } from 'http';
+
 import { CommentQuery } from 'libs/post/comment/src/lib/dto/comment.query';
 
-
+const ApiGatewayURL = {
+  USER_DETAIL: 'http://127.0.0.1:11000/api/users/detail'
+} as const;
 @ApiTags('Api-gateway: posts')
 @Controller('posts')
 @UseFilters(AxiosExceptionFilter)
@@ -106,6 +108,31 @@ export class PostsController {
     return data;
   }
 
+  @Post('/')
+  @UseGuards(CheckAuthGuard)
+  @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: BlogPostMessage.DESCRIPTION.CREATE })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: BlogPostMessage.SUCCESS.CREATED,
+    type: BasePostWithExtraFieldsRDO
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: BlogPostMessage.ERROR.UNAUTHORIZED
+  })
+  @ApiBody({
+    type: CreateBasePostDTO,
+    required: true
+  })
+  public async create(@Body() dto: CreateBasePostDTO & TokenPayloadInterface) {
+    const serviceUrl = `${this.servicesURLs.posts}/`;
+    const createPostData = { ...dto, authorId: dto.userId }; // Подставляем в качестве автора поста текущего юзера
+    const { data } = await this.httpService.axiosRef.post(serviceUrl, createPostData);
+
+    return data;
+  }
+
   @Get('drafts')
   @UseGuards(CheckAuthGuard)
   @UseInterceptors(InjectUserIdInterceptor)
@@ -165,28 +192,36 @@ export class PostsController {
     return data;
   }
 
-  @Get(':postId')
-  @ApiOperation({ summary: BlogPostMessage.DESCRIPTION.SHOW })
+  // User posts feed
+  @Get('feed')
+  @UseGuards(CheckAuthGuard)
+  @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: 'Get user posts feed' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: BlogPostMessage.SUCCESS.FOUND,
-    type: BasePostWithExtraFieldsRDO
+    type: BasePostWithPaginationRDO
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: BlogPostMessage.ERROR.NOT_FOUND
   })
-  @ApiParam({
-    name: "postId",
-    example: 'b0103f3e-a6ac-4719-94bc-60c8294c08c6',
-    description: BlogPostMessage.DESCRIPTION.POST_ID,
-    required: true
-  })
-  public async getDetail(@Param('postId') postId: string) {
-    const serviceUrl = `${this.servicesURLs.posts}/${postId}`;
-    const { data } = await this.httpService.axiosRef.get(serviceUrl);
+  public async getUserFeed(
+    @Body('userId') userId: string,
+    @Req() req: Request
+  ) {
+    const userServiceUrl = ApiGatewayURL.USER_DETAIL;
 
-    return data;
+    const { data: userDetails } = await this.httpService.axiosRef.post(userServiceUrl, { data: { userId } }, {
+      headers: {
+        'Authorization': req.headers['authorization']
+      }
+    });
+
+    const authorsIds = [ userDetails.id, ...userDetails.subscriptions ];
+    const userPostsFeed = await this.index({ authorsIds });
+
+    return userPostsFeed;
   }
 
   // Поиск по заголовку (ТЗ п.8)
@@ -220,53 +255,26 @@ export class PostsController {
     return data;
   }
 
-  @Post('/')
-  @UseGuards(CheckAuthGuard)
-  @UseInterceptors(InjectUserIdInterceptor)
-  @ApiOperation({ summary: BlogPostMessage.DESCRIPTION.CREATE })
+  @Get(':postId')
+  @ApiOperation({ summary: BlogPostMessage.DESCRIPTION.SHOW })
   @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: BlogPostMessage.SUCCESS.CREATED,
+    status: HttpStatus.OK,
+    description: BlogPostMessage.SUCCESS.FOUND,
     type: BasePostWithExtraFieldsRDO
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: BlogPostMessage.ERROR.UNAUTHORIZED
+    status: HttpStatus.NOT_FOUND,
+    description: BlogPostMessage.ERROR.NOT_FOUND
   })
-  @ApiBody({
-    type: CreateBasePostDTO,
+  @ApiParam({
+    name: "postId",
+    example: 'b0103f3e-a6ac-4719-94bc-60c8294c08c6',
+    description: BlogPostMessage.DESCRIPTION.POST_ID,
     required: true
   })
-  public async create(@Body() dto: CreateBasePostDTO) {
-    const serviceUrl = `${this.servicesURLs.posts}/`;
-    const { data } = await this.httpService.axiosRef.post(serviceUrl, dto);
-
-    return data;
-  }
-
-  @Post('/:postId/repost/')
-  @UseGuards(CheckAuthGuard)
-  @UseInterceptors(InjectUserIdInterceptor)
-  @ApiOperation({ summary: BlogPostMessage.DESCRIPTION.REPOST })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: BlogPostMessage.SUCCESS.CREATED,
-    type: BasePostWithExtraFieldsRDO
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: BlogPostMessage.ERROR.UNAUTHORIZED
-  })
-  @ApiBody({
-    type: CreateRepostDTO,
-    required: true
-  })
-  public async repost(
-    @Param('postId') postId: string,
-    @Body('userId') userId: string
-  ) {
-    const serviceUrl = `${this.servicesURLs.posts}/${postId}/repost`;
-    const { data } = await this.httpService.axiosRef.post(serviceUrl, { authorId: userId });
+  public async getDetail(@Param('postId') postId: string) {
+    const serviceUrl = `${this.servicesURLs.posts}/${postId}`;
+    const { data } = await this.httpService.axiosRef.get(serviceUrl);
 
     return data;
   }
@@ -329,6 +337,33 @@ export class PostsController {
     const serviceUrl = `${this.servicesURLs.posts}/${postId}/`;
     const { data } = await this.httpService.axiosRef.delete(serviceUrl, { data: { userId } });
     console.log('SERVICE URL: ', serviceUrl)
+
+    return data;
+  }
+
+  @Post('/:postId/repost/')
+  @UseGuards(CheckAuthGuard)
+  @UseInterceptors(InjectUserIdInterceptor)
+  @ApiOperation({ summary: BlogPostMessage.DESCRIPTION.REPOST })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: BlogPostMessage.SUCCESS.CREATED,
+    type: BasePostWithExtraFieldsRDO
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: BlogPostMessage.ERROR.UNAUTHORIZED
+  })
+  @ApiBody({
+    type: CreateRepostDTO,
+    required: true
+  })
+  public async repost(
+    @Param('postId') postId: string,
+    @Body('userId') userId: string
+  ) {
+    const serviceUrl = `${this.servicesURLs.posts}/${postId}/repost`;
+    const { data } = await this.httpService.axiosRef.post(serviceUrl, { authorId: userId });
 
     return data;
   }

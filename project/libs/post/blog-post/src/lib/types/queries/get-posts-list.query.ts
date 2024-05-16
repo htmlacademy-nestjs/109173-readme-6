@@ -1,5 +1,5 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsIn, IsMongoId, IsNumber, IsOptional, IsString, Max } from 'class-validator';
+import { IsArray, IsIn, IsMongoId, IsNumber, IsOptional, IsString, Max } from 'class-validator';
 
 import { PostTypeEnum, SortDirection, SortDirectionEnum, SortType, SortTypeEnum } from '@project/shared/core';
 
@@ -20,6 +20,13 @@ export class GetPostsListQuery  {
   @IsMongoId()
   @IsOptional()
   public authorId?: string;
+
+  @Expose()
+  @IsArray()
+  @IsMongoId({ each: true })
+  @IsString({ each: true })
+  @IsOptional()
+  public authorsIds?: string[];
 
   @Expose()
   @IsString()

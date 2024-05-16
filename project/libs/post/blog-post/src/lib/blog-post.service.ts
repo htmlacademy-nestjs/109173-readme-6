@@ -143,6 +143,17 @@ export class BlogPostService {
     return paginatedPosts;
   }
 
+  public async getUserFeed(userId: string, userSubscriptions: string[]) {
+    if(!userId) {
+      return;
+    }
+
+    const authors = [ userId, ...userSubscriptions ];
+    const feedPosts = await this.getPaginatedPosts({ authorsIds: authors });
+
+    return feedPosts;
+  }
+
   public async getUserPostsCount(authorId: string) {
     await validateMongoID(authorId);
 

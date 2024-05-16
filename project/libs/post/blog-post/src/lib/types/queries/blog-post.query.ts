@@ -51,6 +51,13 @@ export class BlogPostQuery {
   public authorId?: string;
 
   @Expose()
+  @IsArray()
+  @IsMongoId({ each: true })
+  @IsString({ each: true })
+  @IsOptional()
+  public authorsIds?: string[];
+
+  @Expose()
   @MinLength(BlogPostValidation.TAG.MIN_LENGTH, { each: true })
   @MaxLength(BlogPostValidation.TAG.MAX_LENGTH, { each: true })
   @ArrayMaxSize(BlogPostValidation.TAG.MAX_СOUNT)
